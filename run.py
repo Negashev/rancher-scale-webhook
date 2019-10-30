@@ -53,7 +53,7 @@ async def try_cordon_last_node_of_nodepool(nodes):
                             return False
                         else:
                             print(f"cordon node expire after time")
-            elif node['state'] in ["provisioning", "error"]:
+            elif node['state'] in ["provisioning", "error", "removing"]:
                 # nothing do with if last node not ready
                 print(f"last node not ready")
                 return True
