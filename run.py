@@ -35,7 +35,7 @@ async def try_cordon_last_node_of_nodepool(nodes):
     global RANCHER_VERIFY_SSL
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=RANCHER_VERIFY_SSL),
                                      headers={"Authorization": f"Bearer {RANCHER_TOKEN}"}) as session:
-        async with session.get(f'{nodes}&order=desc&sort=hostname') as resp:
+        async with session.get(f'{nodes}&order=asc&sort=hostname') as resp:
             print(f"try_cordon_last_node_of_nodepool rancher api status: {resp.status}")
             list_nodes = await resp.json()
             node = list_nodes['data'][0]
