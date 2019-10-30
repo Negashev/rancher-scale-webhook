@@ -38,6 +38,11 @@ async def try_cordon_last_node_of_nodepool(nodes):
         async with session.get(f'{nodes}&order=desc&sort=hostname') as resp:
             print(f"try_cordon_last_node_of_nodepool rancher api status: {resp.status}")
             list_nodes = await resp.json()
+            # check status if only one VM is transitioning, stop scale down (scaling happened?)
+            for node in list_nodes['data']:
+                if node['transitioning'] == "yes":
+                    print('found transitioning node')
+                    return True
             node = list_nodes['data'][0]
             if node['state'] == "active":
                 async with session.post(node['actions']['cordon']) as resp:
@@ -52,11 +57,7 @@ async def try_cordon_last_node_of_nodepool(nodes):
                             # kill cordoned machine
                             return False
                         else:
-                            print(f"cordon node expire after time")
-            elif node['state'] in ["provisioning", "error", "removing"]:
-                # nothing do with if last node not ready
-                print(f"last node not ready")
-                return True
+                            print("cordon node expire after time")
     return True
 
 
