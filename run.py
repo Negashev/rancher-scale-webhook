@@ -8,7 +8,7 @@ TOKEN = os.getenv('TOKEN', 'SECRET_TOKEN')
 RANCHER_NODEPOOL_URL = os.getenv('RANCHER_NODEPOOL_URL', None)
 RANCHER_VERIFY_SSL = bool(int(os.getenv('RANCHER_VERIFY_SSL', '0')))
 RANCHER_TOKEN = os.getenv('RANCHER_TOKEN', None)
-RANCHER_CORDONED_TIME = int(os.getenv('RANCHER_CORDONED_TIME', '3600'))
+RANCHER_CORDONED_CPU = int(os.getenv('RANCHER_CORDONED_CPU', '5'))
 RANCHER_VM_MAX = int(os.getenv('RANCHER_VM_MAX', '10'))
 if RANCHER_NODEPOOL_URL is None:
     print("please set env 'RANCHER_NODEPOOL_URL'")
@@ -51,14 +51,12 @@ async def try_cordon_last_node_of_nodepool(nodes):
                     cordon = await resp.text()
                     return True
             elif node['state'] == "cordoned":
-                # check how long this machine is NoSchedule (cordoned)
-                for taint in node['taints']:
-                    if taint['effect'] == "NoSchedule" and taint['key'] == "node.kubernetes.io/unschedulable":
-                        if taint['timeAddedTS'] / 1000 + RANCHER_CORDONED_TIME < time.time():
-                            # kill cordoned machine
-                            return False
-                        else:
-                            print("cordon node expire after time")
+                # remove cordoned node if < RANCHER_CORDONED_CPU
+                capacity = int(node['capacity']['cpu']) * 1000
+                requested = int(node['requested']['cpu'].replace("m", ""))
+                percent = requested/capacity * 100
+                if percent <= RANCHER_CORDONED_CPU:
+                    return False
     return True
 
 
