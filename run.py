@@ -100,7 +100,7 @@ async def scale_up(request):
     old = pool['quantity']
     pool['quantity'] = pool['quantity'] + 1
     # limit maximum VMs
-    if RANCHER_VM_MAX + 1 >= pool['quantity']:
+    if RANCHER_VM_MAX + 1 <= pool['quantity']:
         return request.Response(text='ok')
     print(f"scale up {old} --> {pool['quantity']}")
     await set_nodepool(pool)
