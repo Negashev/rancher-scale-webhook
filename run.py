@@ -9,6 +9,7 @@ RANCHER_NODEPOOL_URL = os.getenv('RANCHER_NODEPOOL_URL', None)
 RANCHER_VERIFY_SSL = bool(int(os.getenv('RANCHER_VERIFY_SSL', '0')))
 RANCHER_TOKEN = os.getenv('RANCHER_TOKEN', None)
 RANCHER_CORDONED_TIME = int(os.getenv('RANCHER_CORDONED_TIME', '3600'))
+RANCHER_VM_MAX = int(os.getenv('RANCHER_VM_MAX', '10'))
 if RANCHER_NODEPOOL_URL is None:
     print("please set env 'RANCHER_NODEPOOL_URL'")
 
@@ -86,6 +87,7 @@ async def set_nodepool(data):
 
 async def scale_up(request):
     global TOKEN
+    global RANCHER_VM_MAX
     if request.match_dict['token'] != TOKEN:
         print(f"token '{request.match_dict['token']}' not valid")
         return request.Response(text='ok')
@@ -97,6 +99,9 @@ async def scale_up(request):
         return request.Response(text='ok')
     old = pool['quantity']
     pool['quantity'] = pool['quantity'] + 1
+    # limit maximum VMs
+    if RANCHER_VM_MAX + 1 >= pool['quantity']:
+        return request.Response(text='ok')
     print(f"scale up {old} --> {pool['quantity']}")
     await set_nodepool(pool)
     return request.Response(text='ok')
