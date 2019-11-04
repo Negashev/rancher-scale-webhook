@@ -32,7 +32,7 @@ async def try_uncordon_node_of_nodepool(nodes):
     return False
 
 
-async def try_cordon_last_node_of_nodepool(nodes):
+async def try_cordon_last_node_of_nodepool(nodes, hostname_prefix):
     global RANCHER_TOKEN
     global RANCHER_VERIFY_SSL
     global RANCHER_VM_MIN
@@ -46,10 +46,10 @@ async def try_cordon_last_node_of_nodepool(nodes):
                 if node['transitioning'] == "yes":
                     print('found transitioning node')
                     return True
-            # check len servers again
-            if len(list_nodes['data']) <= RANCHER_VM_MIN:
-                return True
             node = list_nodes['data'][0]
+            # check if this server "my-example-server-1" (first server)
+            if node['hostname'] == hostname_prefix + '1':
+                return True
             if node['state'] == "active":
                 async with session.post(node['actions']['cordon']) as resp:
                     print(f"cordon node rancher api status: {resp.status}")
@@ -120,7 +120,7 @@ async def scale_down(request):
         print(f'quantity <= {RANCHER_VM_MIN}')
         return request.Response(text='ok')
     # check if we have Cordoned node
-    cordon_node = await try_cordon_last_node_of_nodepool(pool['links']['nodes'])
+    cordon_node = await try_cordon_last_node_of_nodepool(pool['links']['nodes'], pool['hostnamePrefix'])
     if cordon_node:
         print(f"scale down --> save time, cordon node")
         return request.Response(text='ok')
