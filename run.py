@@ -10,6 +10,7 @@ RANCHER_VERIFY_SSL = bool(int(os.getenv('RANCHER_VERIFY_SSL', '0')))
 RANCHER_TOKEN = os.getenv('RANCHER_TOKEN', None)
 RANCHER_CORDONED_CPU = int(os.getenv('RANCHER_CORDONED_CPU', '5'))
 RANCHER_VM_MAX = int(os.getenv('RANCHER_VM_MAX', '10'))
+RANCHER_VM_MIN = int(os.getenv('RANCHER_VM_MIN', '1'))
 if RANCHER_NODEPOOL_URL is None:
     print("please set env 'RANCHER_NODEPOOL_URL'")
 
@@ -34,6 +35,7 @@ async def try_uncordon_node_of_nodepool(nodes):
 async def try_cordon_last_node_of_nodepool(nodes):
     global RANCHER_TOKEN
     global RANCHER_VERIFY_SSL
+    global RANCHER_VM_MIN
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=RANCHER_VERIFY_SSL),
                                      headers={"Authorization": f"Bearer {RANCHER_TOKEN}"}) as session:
         async with session.get(f'{nodes}&order=desc&sort=hostname') as resp:
@@ -44,6 +46,9 @@ async def try_cordon_last_node_of_nodepool(nodes):
                 if node['transitioning'] == "yes":
                     print('found transitioning node')
                     return True
+            # check len servers again
+            if len(list_nodes['data']) <= RANCHER_VM_MIN:
+                return True
             node = list_nodes['data'][0]
             if node['state'] == "active":
                 async with session.post(node['actions']['cordon']) as resp:
@@ -111,8 +116,8 @@ async def scale_down(request):
         print(f"token '{request.match_dict['token']}' not valid")
         return request.Response(text='ok')
     pool = await get_nodepool()
-    if pool['quantity'] <= 1:
-        print('quantity <= 1')
+    if pool['quantity'] <= RANCHER_VM_MIN:
+        print(f'quantity <= {RANCHER_VM_MIN}')
         return request.Response(text='ok')
     # check if we have Cordoned node
     cordon_node = await try_cordon_last_node_of_nodepool(pool['links']['nodes'])
