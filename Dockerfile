@@ -4,11 +4,11 @@ WORKDIR /src
 
 CMD ["python3", "-um", "japronto", "run.app"]
 
-RUN apk add --update python3
+RUN apk add --update python3 py3-idna 
 
 ADD requirements.txt ./
 
-RUN apk add --no-cache --virtual .build-deps build-base python3-dev py3-pip py3-idna git \
+RUN apk add --no-cache --virtual .build-deps build-base python3-dev py3-pip git \
     && pip3 --no-cache install -r requirements.txt \
 	&& apk del .build-deps \
 	&& rm -rf /var/cache/apk/*
