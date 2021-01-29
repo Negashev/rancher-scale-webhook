@@ -8,7 +8,7 @@ RUN apk add --update python3
 
 ADD requirements.txt ./
 
-RUN apk add --no-cache --virtual .build-deps build-base python3-dev py3-pip git \
+RUN apk add --no-cache --virtual .build-deps build-base python3-dev py3-pip py3-idna git \
     && pip3 --no-cache install -r requirements.txt \
 	&& apk del .build-deps \
 	&& rm -rf /var/cache/apk/*
