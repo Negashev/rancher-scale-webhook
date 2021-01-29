@@ -40,13 +40,15 @@ async def try_cordon_last_node_of_nodepool(nodes, hostname_prefix):
                                      headers={"Authorization": f"Bearer {RANCHER_TOKEN}"}) as session:
         async with session.get(f'{nodes}&order=desc&sort=hostname') as resp:
             print(f"try_cordon_last_node_of_nodepool rancher api status: {resp.status}")
-            list_nodes = await resp.json()
+            not_sorted_list_nodes = await resp.json()
             # check status if only one VM is transitioning, stop scale down (scaling happened?)
-            for node in list_nodes['data']:
+            for node in not_sorted_list_nodes['data']:
                 if node['transitioning'] == "yes":
                     print('found transitioning node')
                     return True
-            node = list_nodes['data'][0]
+            # HM.... lambda before for not_sorted_list_nodes['data']
+            list_nodes = sorted(not_sorted_list_nodes['data'], key = lambda i: int(i['hostname'][len(hostname_prefix):]), reverse=True)
+            node = list_nodes[0]
             # check if this server "my-example-server-1" (first server)
             if node['hostname'] == hostname_prefix + '1':
                 return True
